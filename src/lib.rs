@@ -13,7 +13,7 @@ fn serialize_image<S, P, C>(image: &ImageBuffer<P, C>, serializer: S) -> Result<
 where
     S: Serializer,
     P: Pixel,
-    C: Deref<Target = [P::Subpixel]>,
+    C: Deref<Target = [<PI as Pixel>::Subpixel]>,
 {
     todo!()
 }
@@ -23,7 +23,7 @@ fn deserialize_image<'de, D, P, C>(deserializer: D) -> Result<ImageBuffer<P, C>,
 where
     D: Deserializer<'de>,
     P: Pixel + 'static,
-    C: Deref<Target = [P::Subpixel]> + From<Vec<P::Subpixel>>,
+    C: Deref<Target = [<PI as Pixel>::Subpixel]>,
 {
     todo!()
 }
@@ -38,29 +38,33 @@ pub struct Rect {
 }
 
 /// Sprite image
-pub struct Sprite {
-    pub image: ImageBuffer<Rgba<u8>, Vec<u8>>,
+pub struct Sprite<PI, C>
+where
+    PI: Pixel + 'static,
+    C: Deref<Target = [<PI as Pixel>::Subpixel]>,
+{
+    pub image: ImageBuffer<PI, C>,
 }
 
 /// SpriteSheet containing sprites and their areas
 #[derive(Serialize, Deserialize)]
-pub struct SpriteSheet<P, C>
+pub struct SpriteSheet<PI, C>
 where
-    P: Pixel,
-    C: Deref<Target = [<P as Pixel>::Subpixel]>,
+    PI: Pixel + 'static,
+    C: Deref<Target = [<PI as Pixel>::Subpixel]>,
 {
     #[serde(
         serialize_with = "serialize_image",
         deserialize_with = "deserialize_image"
     )]
-    image: ImageBuffer<P, C>,
+    image: ImageBuffer<PI, C>,
     mapping: HashMap<String, Rect>,
 }
 
 impl<PI, C> SpriteSheet<PI, C>
 where
     PI: Pixel + 'static,
-    C: Deref<Target = [PI::Subpixel]> + From<Vec<PI::Subpixel>>,
+    C: Deref<Target = [<PI as Pixel>::Subpixel]>,
 {
     /// Constructor for a new SpriteSheet
     fn new(image: ImageBuffer<PI, C>, mapping: HashMap<String, Rect>) -> Self {
@@ -78,10 +82,10 @@ where
     }
 
     /// Returns a sprite image
-    fn get_sprite(&self, name: &String) -> Option<Sprite> {
+    fn get_sprite(&self, name: &String) -> Option<Sprite<PI, C>> {
         let rect = self.mapping.get(name)?;
         Some(Sprite {
-            image: self.image.view(rect.x, rect.y, rect.w, rect.h).to_image(),
+            image: self.image.view(rect.x, rect.y, rect.w, rect.h).into(),
         })
     }
 }
