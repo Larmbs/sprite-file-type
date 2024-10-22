@@ -41,7 +41,7 @@ impl SpriteSheet {
 
         // Reading the header of the file format
         let mut header_buf = [0u8; 13];
-        reader.read_exact(&mut header_buf)?;
+        reader.read_exact(&mut header_buf).unwrap();
 
         // Parse header values
         let version = header_buf[0]; // Version number
@@ -58,29 +58,30 @@ impl SpriteSheet {
 
         // Read image data
         let mut image_data = vec![0u8; (width * height * 4) as usize]; // 4 bytes per pixel (RGBA)
-        reader.read_exact(&mut image_data)?;
+        reader.read_exact(&mut image_data).unwrap();
 
         // Create ImageBuffer from the raw image data
         let image = ImageBuffer::<Rgba<u8>, Vec<u8>>::from_raw(width, height, image_data)
             .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "Invalid image data"))?;
-
         // Read mapping data
         let mut mapping = HashMap::new();
-        for _ in 0..num_mappings {
+        for i in 0..num_mappings {
             // Read string length
             let mut length_buf = [0u8; 4];
-            reader.read_exact(&mut length_buf)?;
+            reader.read_exact(&mut length_buf).unwrap();
             let string_length = u32::from_le_bytes(length_buf);
 
             // Read string bytes
             let mut key_buf = vec![0u8; string_length as usize];
-            reader.read_exact(&mut key_buf)?;
+            reader.read_exact(&mut key_buf).map_err(|_| {
+                panic!("{}, {}", i, string_length);
+            }).unwrap_err();
             let key = String::from_utf8(key_buf)
                 .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "Invalid UTF-8 string"))?;
 
             // Read rectangle values
             let mut rect_buf = [0u8; 16]; // 4 bytes for each of x, y, w, h
-            reader.read_exact(&mut rect_buf)?;
+            reader.read_exact(&mut rect_buf).unwrap();
             let rect = Rect {
                 x: u32::from_le_bytes(rect_buf[0..4].try_into().unwrap()),
                 y: u32::from_le_bytes(rect_buf[4..8].try_into().unwrap()),
@@ -116,7 +117,7 @@ impl SpriteSheet {
 
         // Writing mapping data
         for (key, value) in self.mapping.iter() {
-            writer.write(&(key.len() as u32).to_le_bytes())?;
+            writer.write(&(key.bytes().len() as u32).to_le_bytes())?;
             writer.write(key.as_bytes())?;
             let mut rect_values = Vec::with_capacity(16);
             rect_values.extend(value.x.to_le_bytes());

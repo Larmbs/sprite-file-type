@@ -4,13 +4,14 @@ It uses the image crate under the hood for maximum compatibility
 
 File structure of .sprite file type
 Uses Little Endian Format for u32
-```
-- u8          : Version Number
-- u32         : Width of Image
-- u32         : Height of Image
-- u32         : Number of Hashmap Entries
+```             
+                                           Header | Total Bytes
+- u8          : Version Number            1 Byte  | 13
+- u32         : Width of Image            4 Bytes |
+- u32         : Height of Image           4 Bytes |
+- u32         : Number of Hashmap Entries 4 Bytes |
 - [
-    - For each pixel (Width * Height):
+    - For each pixel (Width * Height):    
         - u8      : Red Channel
         - u8      : Green Channel
         - u8      : Blue Channel
