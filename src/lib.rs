@@ -1,7 +1,4 @@
-use image::io::Reader;
-use image::{DynamicImage, GenericImageView, ImageBuffer, Rgba};
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use serialimage::{DynamicSerialImage, SerialImageBuffer};
+use image::{GenericImageView, ImageBuffer, Rgba};
 use std::fs::File;
 use std::io::{self, BufReader, BufWriter, Read, Write};
 use std::{collections::HashMap, path::Path};
@@ -9,7 +6,7 @@ use std::{collections::HashMap, path::Path};
 const VERSION_NUMBER: u8 = 0;
 
 /// Rectangle representing bounds of image
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct Rect {
     pub x: u32,
     pub y: u32,
@@ -41,7 +38,7 @@ impl SpriteSheet {
 
         // Reading the header of the file format
         let mut header_buf = [0u8; 13];
-        reader.read_exact(&mut header_buf).unwrap();
+        reader.read_exact(&mut header_buf)?;
 
         // Parse header values
         let version = header_buf[0]; // Version number
@@ -58,30 +55,28 @@ impl SpriteSheet {
 
         // Read image data
         let mut image_data = vec![0u8; (width * height * 4) as usize]; // 4 bytes per pixel (RGBA)
-        reader.read_exact(&mut image_data).unwrap();
+        reader.read_exact(&mut image_data)?;
 
         // Create ImageBuffer from the raw image data
         let image = ImageBuffer::<Rgba<u8>, Vec<u8>>::from_raw(width, height, image_data)
             .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "Invalid image data"))?;
         // Read mapping data
         let mut mapping = HashMap::new();
-        for i in 0..num_mappings {
+        for _ in 0..num_mappings {
             // Read string length
             let mut length_buf = [0u8; 4];
-            reader.read_exact(&mut length_buf).unwrap();
+            reader.read_exact(&mut length_buf)?;
             let string_length = u32::from_le_bytes(length_buf);
 
             // Read string bytes
             let mut key_buf = vec![0u8; string_length as usize];
-            reader.read_exact(&mut key_buf).map_err(|_| {
-                panic!("{}, {}", i, string_length);
-            }).unwrap_err();
+            reader.read_exact(&mut key_buf)?;
             let key = String::from_utf8(key_buf)
                 .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "Invalid UTF-8 string"))?;
 
             // Read rectangle values
             let mut rect_buf = [0u8; 16]; // 4 bytes for each of x, y, w, h
-            reader.read_exact(&mut rect_buf).unwrap();
+            reader.read_exact(&mut rect_buf)?;
             let rect = Rect {
                 x: u32::from_le_bytes(rect_buf[0..4].try_into().unwrap()),
                 y: u32::from_le_bytes(rect_buf[4..8].try_into().unwrap()),
@@ -106,13 +101,18 @@ impl SpriteSheet {
         let mut header = Vec::with_capacity(13);
         header.push(VERSION_NUMBER); // 1 byte
         header.extend(self.image.width().to_le_bytes()); // 4 bytes
+
         header.extend(self.image.height().to_le_bytes()); // 4 bytes
-        header.extend(self.mapping.len().to_le_bytes()); // 4 bytes
+
+        header.extend((self.mapping.len() as u32).to_le_bytes()); // 4 bytes
+
+        println!("Header has {} bytes", header.len());
 
         writer.write(&header)?;
 
         // Writing image data
         let bytes = self.image.as_raw().to_owned();
+        println!("Image has {} bytes", bytes.len());
         writer.write_all(&bytes)?;
 
         // Writing mapping data
