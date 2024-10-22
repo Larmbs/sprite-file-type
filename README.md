@@ -1,0 +1,1 @@
+This is just a fun project where I create a new file type used for quickly creating spritesheets
