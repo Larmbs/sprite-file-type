@@ -85,7 +85,7 @@ fn test_save_and_load() {
     let image = create_sample_image();
     let meta = create_sample_metadata();
     let sprite_sheet = SpriteSheet::new(image.clone(), meta.clone());
-    
+
     let image_path = format!("{}{}", BIN_PATH, "test_sprite_sheet_image.png");
     let meta_path = format!("{}{}", BIN_PATH, "test_sprite_sheet_meta.json");
 

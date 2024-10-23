@@ -39,7 +39,7 @@ impl SpriteSheetMetaData {
 
     /// JSON File -> SpriteSheet Meta
     pub fn load_json<P: AsRef<Path>>(path: P) -> Result<Self> {
-        let file = File::create(path)?;
+        let file = File::open(path)?;
         let reader = BufReader::new(file);
         Ok(serde_json::from_reader(reader)?)
     }

@@ -113,7 +113,7 @@ impl SpriteSheet {
         let image: DynamicImage = self.image.clone().into();
         image
             .save(image_path)
-            .map_err(|_| Error::new(ErrorKind::Other, "Failed to save image"))?;
+            .map_err(|err| Error::new(ErrorKind::Other, err.to_string()))?;
 
         self.meta.save_json(meta_path)?;
         Ok(())
@@ -126,7 +126,7 @@ impl SpriteSheet {
     ) -> Result<Self> {
         let image = ImageReader::open(image_path)?
             .decode()
-            .map_err(|_| Error::new(ErrorKind::Other, "Failed to decode image"))?
+            .map_err(|err| Error::new(ErrorKind::Other, Error::new(ErrorKind::Other, err.to_string())))?
             .into();
 
         let meta = SpriteSheetMetaData::load_json(meta_path)?;
@@ -138,7 +138,7 @@ impl SpriteSheet {
     pub fn new_from_path<P: AsRef<Path>>(path: P, meta: SpriteSheetMetaData) -> Result<Self> {
         let image = ImageReader::open(path)?
             .decode()
-            .map_err(|_| Error::new(ErrorKind::Other, "Failed to decode image"))?
+            .map_err(|err| Error::new(ErrorKind::Other, Error::new(ErrorKind::Other, err.to_string())))?
             .into();
         Ok(Self { image, meta })
     }
