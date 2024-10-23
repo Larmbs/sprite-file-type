@@ -34,11 +34,3 @@ fn main() {
 }
 
 ```
-
-### Dependencies
-Ensure you have the following dependencies in your `Cargo.toml`:
-
-```toml
-[dependencies]
-image = "0.23"
-```
