@@ -1,6 +1,6 @@
 [package]
 name = "sprite-sheet-file-type"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 license = "MIT"
 description = "File Type that simplifies SpriteSheet creation"
