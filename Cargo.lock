@@ -835,7 +835,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "sprite-file-type"
+name = "sprite-sheet-file-type"
 version = "0.1.0"
 dependencies = [
  "image",

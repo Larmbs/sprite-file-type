@@ -1,5 +1,5 @@
 
-use sprite_sheet::{SpriteSheet, Image, mapping::{SpriteSheetMetaData, Rect}};
+use sprite_sheet_file_type::{SpriteSheet, Image, mapping::{SpriteSheetMetaData, Rect}};
 use image::*;
 use std::io::{ErrorKind, Write};
 use std::io::Cursor;

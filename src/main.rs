@@ -1,4 +1,4 @@
-use sprite_sheet::{SpriteSheet, mapping::{SpriteSheetMetaData, Rect}};
+use sprite_sheet_file_type::{SpriteSheet, mapping::{SpriteSheetMetaData, Rect}};
 
 fn main() {
     // Create metadata for the sprite
