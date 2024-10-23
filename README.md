@@ -1,59 +1,44 @@
-This is just a fun project where I create a new file type used for quickly creating spritesheets
+# SpriteSheet File Format
 
-It uses the image crate under the hood for maximum compatibility
+## Overview
+This project aims to create a more convenient sprite sheet file format for use in game development and other graphics applications. Typically, sprite sheets consist of a single image alongside defined rectangles and sprite names to sample from that image. This project seeks to streamline that process.
 
-File structure of .rssheet file type (Raw Sprite Sheet) - Bytes storage
-Uses Little Endian Format for u32
+## Features
+- **Convenient Format**: A custom file format that allows for easier management and usage of sprite sheets.
+- **Structured Metadata**: Clearly defined metadata for sprites, including names, dimensions, and positions.
+- **Flexibility**: Supports various image formats and allows for easy integration into different projects.
 
-```
-// Image Data Header (ByteSize(9))
-- u8  : Image Data Version Number
-- u32 : Width of Image
-- u32 : Height of Image
-// Image Data (Width * Height * 4)
-- [;;For each pixel (Width * Height):
-  - u8  : Red Channel
-  - u8  : Green Channel
-  - u8  : Blue Channel
-  - u8  : Alpha Channel
-  ]
+## Example Usage
 
-// SpriteSheet MetaData Header (ByteSize(5))
-- u8  : SpriteSheet MetaData Version Number
-- u32 : Number of Hashmap Entries
-// SpriteSheet MetaData (ByteSize(StringByteLength))
-- [;;For each hashmap entry:
-  - u32 : String Byte Length
-  // String Data (ByteSize(StringByteLength))
-  - [;;For each byte in string (String Length):
-    - u8 : String Byte
-    ]
+Here’s a sample code snippet demonstrating how to use the `spritesheet` library to create and manipulate sprite sheets.
+```Rust
+use sprite_sheet::{SpriteSheet, mapping::{SpriteSheetMetaData, Rect}};
 
-  - u32 : X Coordinate
-  - u32 : Y Coordinate
-  - u32 : Width
-  - u32 : Height
-  ]
-```
+fn main() {
+    // Create metadata for the sprite
+    let mut meta = SpriteSheetMetaData::empty();
+    meta.mapping.insert(String::from("Hello"), Rect { x: 20, y: 20, w: 40, h: 60 });
 
-File Structure of .ssheetmeta file type (Sprite Sheet Meta Data) - Raw bytes storing mappings
-Uses Little Endian Format for u32
+    // Create a new SpriteSheet from an image file
+    let sheet = SpriteSheet::new_from_path("cat.jpeg", meta).unwrap();
+
+    // Save the sprite sheet in PNG format and its metadata in JSON
+    sheet.save("sheet.png", "sheet.json").unwrap();
+
+    // Save the sprite sheet in a raw binary format
+    sheet.save_raw("raw_image.ssprite").unwrap();
+
+    // Retrieve the sprite using its name
+    let sprite = sheet.get_sprite(&String::from("Hello")).unwrap();
+    println!("Retrieved sprite: {:?}", sprite.inner.dimensions());
+}
 
 ```
-// SpriteSheet MetaData Header (ByteSize(5))
-- u8  : Version Number
-- u32 : Number of Hashmap Entries
-// Hashmap Data
-- [;;For each hashmap entry:
-  - u32 : String Byte Length
-  // String Data (ByteSize(StringByteLength))
-  - [;;For each byte in string (String Length):
-    - u8 : String Byte
-    ]
 
-  - u32 : X Coordinate
-  - u32 : Y Coordinate
-  - u32 : Width
-  - u32 : Height
-  ]
+### Dependencies
+Ensure you have the following dependencies in your `Cargo.toml`:
+
+```toml
+[dependencies]
+image = "0.23"
 ```
