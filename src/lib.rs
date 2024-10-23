@@ -1,7 +1,6 @@
 //! SpriteSheet File Format
-//!
 
-use image::{GenericImageView, ImageBuffer, ImageReader, Rgba};
+use image::{DynamicImage, GenericImageView, ImageBuffer, ImageReader, Rgba};
 
 use std::fs::File;
 use std::io::{self, BufReader, BufWriter, Error, ErrorKind, Read, Result, Write};
@@ -10,7 +9,7 @@ use std::path::Path;
 pub mod mapping;
 use mapping::SpriteSheetMetaData;
 
-/// Version number of the .
+/// Version number of the format
 const FORMAT_VERSION_NUMBER: u8 = 0;
 
 pub type Image = ImageBuffer<Rgba<u8>, Vec<u8>>;
@@ -22,8 +21,8 @@ pub struct Sprite {
 
 /// SpriteSheet File Type
 pub struct SpriteSheet {
-    image: Image,
-    meta: SpriteSheetMetaData,
+    pub image: Image,
+    pub meta: SpriteSheetMetaData,
 }
 impl SpriteSheet {
     pub fn new(image: Image, meta: SpriteSheetMetaData) -> Self {
@@ -31,7 +30,7 @@ impl SpriteSheet {
     }
 
     /// Image -> Writer
-    pub fn image_to_writer<W: Write>(image: &Image, writer: &mut W) -> Result<()> {
+    pub fn image_raw_to_writer<W: Write>(image: &Image, writer: &mut W) -> Result<()> {
         /* Writing Image Header Data */
         writer.write(&[FORMAT_VERSION_NUMBER])?;
         writer.write(&image.width().to_le_bytes())?;
@@ -40,14 +39,14 @@ impl SpriteSheet {
         /* Writing Raw Image Data */
         let bytes = image.as_raw().to_owned();
         writer.write_all(&bytes)?;
-        
+
         writer.flush()?;
 
         Ok(())
     }
 
     /// Reader -> Image
-    pub fn image_from_reader<R: Read>(reader: &mut R) -> Result<Image> {
+    pub fn image_raw_from_reader<R: Read>(reader: &mut R) -> Result<Image> {
         /* Reading Image Header */
         // Version Number
         let mut buf = [0u8; 1];
@@ -72,7 +71,7 @@ impl SpriteSheet {
         let height = u32::from_le_bytes(buf);
 
         /* Reading Raw Image Data */
-        let mut buf = Vec::with_capacity((width * height * 4) as usize);
+        let mut buf = vec![0u8; (width * height * 4) as usize];
         reader.read_exact(&mut buf)?;
         println!("{:?}", &buf);
         let image: Image = ImageBuffer::<Rgba<u8>, Vec<u8>>::from_raw(width, height, buf)
@@ -86,7 +85,7 @@ impl SpriteSheet {
         let file = File::open(path)?;
         let mut reader = BufReader::new(file);
 
-        let image = Self::image_from_reader(&mut reader)?;
+        let image = Self::image_raw_from_reader(&mut reader)?;
         let meta = SpriteSheetMetaData::from_reader(&mut reader)?;
 
         Ok(Self::new(image, meta))
@@ -98,7 +97,7 @@ impl SpriteSheet {
         let file = File::create(path)?;
         let mut writer = BufWriter::new(file);
 
-        Self::image_to_writer(&self.image, &mut writer)?;
+        Self::image_raw_to_writer(&self.image, &mut writer)?;
         self.meta.to_writer(&mut writer)?;
         writer.flush()?;
 
@@ -111,24 +110,25 @@ impl SpriteSheet {
         image_path: P1,
         meta_path: P2,
     ) -> io::Result<()> {
-        let file = File::create(image_path)?;
-        let mut writer = BufWriter::new(file);
-        Self::image_to_writer(&self.image, &mut writer)?;
-        writer.flush()?;
+        let image: DynamicImage = self.image.clone().into();
+        image
+            .save(image_path)
+            .map_err(|_| Error::new(ErrorKind::Other, "Failed to save image"))?;
+
         self.meta.save_json(meta_path)?;
         Ok(())
     }
 
     /// Meta JSON File & Image File -> SpriteSheet
     pub fn load<P1: AsRef<Path>, P2: AsRef<Path>>(
-        &self,
         image_path: P1,
         meta_path: P2,
     ) -> Result<Self> {
-        let file = File::open(image_path)?;
-        let mut reader = BufReader::new(file);
+        let image = ImageReader::open(image_path)?
+            .decode()
+            .map_err(|_| Error::new(ErrorKind::Other, "Failed to decode image"))?
+            .into();
 
-        let image = Self::image_from_reader(&mut reader)?;
         let meta = SpriteSheetMetaData::load_json(meta_path)?;
 
         Ok(Self { image, meta })
@@ -136,11 +136,11 @@ impl SpriteSheet {
 
     /// Allows you to create a SpriteSheet by providing a image path
     pub fn new_from_path<P: AsRef<Path>>(path: P, meta: SpriteSheetMetaData) -> Result<Self> {
-        let image = ImageReader::open(path)?.decode().map_err(|_| Error::new(ErrorKind::Other, "Failed to decode image"))?.into();
-        Ok(Self {
-            image,
-            meta,
-        })
+        let image = ImageReader::open(path)?
+            .decode()
+            .map_err(|_| Error::new(ErrorKind::Other, "Failed to decode image"))?
+            .into();
+        Ok(Self { image, meta })
     }
     /// Returns a sprite image
     pub fn get_sprite(&self, name: &String) -> Option<Sprite> {

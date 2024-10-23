@@ -23,7 +23,7 @@ pub struct Rect {
 }
 
 /// MetaData of SpriteSheet File Type
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct SpriteSheetMetaData {
     pub mapping: HashMap<String, Rect>,
 }
@@ -147,7 +147,7 @@ impl SpriteSheetMetaData {
         Ok(Self { mapping })
     }
 
-    pub fn new() -> Self {
+    pub fn empty() -> Self {
         Self { mapping: HashMap::new() }
     }
 

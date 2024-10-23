@@ -3,6 +3,10 @@ name = "sprite-file-type"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+name = "sprite_sheet"
+path = "src/lib.rs" 
+
 [dependencies]
 image = {version="0.25.0"}
 serde = {version="1.0.213", features=["derive"]}
